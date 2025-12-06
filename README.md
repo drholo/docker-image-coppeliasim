@@ -2,28 +2,16 @@ CoppeliaSim Docker image
 =======================================
 
 ### Building:
-
-Use `docker build` as usual, or use the provided script:
+> USE DOCKER COMPOSE!
 
 ```bash
-sh build.sh
+docker compose build
 ```
 
 ### Running:
 
-> USE DOCKER COMPOSE!
 ```bash
-xhost +SI:localuser:$(id -un)
 docker run --rm coppeliasim
-```
-
-
-Use `docker run` as usual.
-
-The provided script `run.sh` sets some useful parameters, such as sharing the `shared` directory, and forwarding the RemoteAPI port. It will also forward any argument to the `coppeliaSim` executable, e.g.:
-
-```bash
-sh run.sh -s10000 -q /shared/mySimulation.ttt
 ```
 
 ### Credits:

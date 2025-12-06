@@ -1,5 +1,4 @@
 FROM osrf/ros:jazzy-desktop-full
-# ros:jazzy-desktop-full
 
 ARG USERNAME=andrii
 ARG USER_UID=1000
@@ -39,10 +38,9 @@ ENV PATH=$COPPELIASIM_ROOT_DIR:$PATH
 # CMD ["./coppeliaSim.sh", "-h"]
 
 # Use following instead to open an application window via an X server:
-RUN echo '#!/bin/bash\ncd $COPPELIASIM_ROOT_DIR\n./coppeliaSim "$@"' > /entrypoint && chmod a+x /entrypoint
+RUN echo '#!/bin/bash\ncd $COPPELIASIM_ROOT_DIR\n./coppeliaSim "$@"' > /coppeliasim && chmod a+x /coppeliasim
 
-# build ROS2 interface
-
+# Build & install ROS2 interface
 RUN apt-get update && \
 	apt-get install -y \
 	python3-regex \
@@ -87,9 +85,10 @@ EXPOSE 23000-23500
 
 USER $USERNAME
 
+
 RUN sudo rosdep update && \
 	cd /workspace && \
-	# sudo rosdep install --from-paths src --ignore-src -y && \
 	sudo chown -R $(whoami) /workspace
 
+WORKDIR /workspace
 CMD ["/bin/bash"]

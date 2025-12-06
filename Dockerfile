@@ -1,4 +1,5 @@
-FROM ros:jazzy
+FROM osrf/ros:jazzy-desktop-full
+# ros:jazzy-desktop-full
 
 ARG USERNAME=andrii
 ARG USER_UID=1000
@@ -18,7 +19,7 @@ RUN apt-get update -q && \
     apt-get autoclean -y && apt-get autoremove -y && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /shared /opt
+RUN mkdir -p /shared /opt /workspace
 
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -40,8 +41,34 @@ ENV PATH=$COPPELIASIM_ROOT_DIR:$PATH
 # Use following instead to open an application window via an X server:
 RUN echo '#!/bin/bash\ncd $COPPELIASIM_ROOT_DIR\n./coppeliaSim "$@"' > /entrypoint && chmod a+x /entrypoint
 
-EXPOSE 23000-23500
+# build ROS2 interface
 
+RUN apt-get update && \
+	apt-get install -y \
+	python3-regex \
+	ros-jazzy-example-interfaces \
+	ros-jazzy-ament-cmake-* \
+	xsltproc \
+	python3-catkin-pkg && \
+    apt-get autoclean -y && apt-get autoremove -y && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+	
+RUN mkdir -p /tmp/ros2_ws/src && \
+	cd /tmp/ros2_ws/src && \
+	git clone https://github.com/CoppeliaRobotics/simROS2 && \
+	apt-get update && \
+	rosdep update && \
+	cd .. && \
+	rosdep install --from-paths src --ignore-src -y && \
+    apt-get autoclean -y && apt-get autoremove -y && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install catkin_pkg numpy PyYAML
+
+RUN	bash -c "set +u && source /opt/ros/jazzy/setup.bash && \
+	ulimit -s unlimited && cd /tmp/ros2_ws/ && \
+	colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release && \
+	set -u"
 
 # Delete user if it exists in container (e.g Ubuntu Noble: ubuntu)
 RUN if id -u $USER_UID ; then userdel `id -un $USER_UID` ; fi
@@ -49,12 +76,20 @@ RUN if id -u $USER_UID ; then userdel `id -un $USER_UID` ; fi
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    #
-    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
     && apt-get update \
     && apt-get install -y sudo \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
+RUN chown -R $USERNAME:$USERNAME /workspace
+
+EXPOSE 23000-23500
+
 USER $USERNAME
+
+RUN sudo rosdep update && \
+	cd /workspace && \
+	# sudo rosdep install --from-paths src --ignore-src -y && \
+	sudo chown -R $(whoami) /workspace
+
 CMD ["/bin/bash"]

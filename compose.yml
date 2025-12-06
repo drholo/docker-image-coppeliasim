@@ -1,6 +1,9 @@
 services:
     coppeliasim:
         image: vrep_ros:jazzy
+        build:
+          context: .
+          dockerfile: Dockerfile
         platform: linux/amd64 # No current build for arm64
         environment:
           DISPLAY: $DISPLAY # x server related
@@ -9,6 +12,9 @@ services:
         volumes:
           - /tmp/.X11-unix:/tmp/.X11-unix # x server related
           - ~/.Xauthority:/root/.Xauthority # x server related
+          - type: bind
+            source: ./workspace
+            target: /workspace
         network_mode: "host" # x server related
         command: /bin/bash
         # command: /bin/bash -c "

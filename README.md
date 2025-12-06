@@ -13,7 +13,8 @@ sh build.sh
 
 > USE DOCKER COMPOSE!
 ```bash
-docker compose up
+xhost +SI:localuser:$(id -un)
+docker run --rm coppeliasim
 ```
 
 
